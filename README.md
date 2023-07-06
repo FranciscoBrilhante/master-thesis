@@ -30,9 +30,13 @@ matplotlib
 tqdm
 numpy
 ```
+### Experiment Replication
 
-
-
+Both `gan` and `diffusion-model` contain a `configs.py` file with configurations for all the experiments.
+In order to train a given netowrk call `train` function with a config setup
+```sh
+ tar xvfz ./datasets.tar.gz ./datasets
+```
 <!-- LICENSE -->
 ## License
 
