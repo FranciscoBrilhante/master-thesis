@@ -1,0 +1,46 @@
+.container{
+    position: relative;
+    height: 170px;
+    width: 170px;
+    
+    justify-self: center;
+    align-self: center;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border: 1px dotted black;
+    box-shadow: 3px 5px 15px -4px rgba(0, 0, 0, 0.212);
+}
+
+.image{
+    cursor: default;
+    font-size: 160px;
+    text-align: center;
+    color: #777777;
+}
+
+.fileUpload{
+    display: none;
+}
+
+.fileUploadLabel{
+    background-color: rgba(255, 255, 255, 0.5);
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    height: 30px;
+    z-index: 100;
+    border: 1px dotted black;
+    border-bottom: 0;
+    border-right: 0;
+    text-align: center;
+    font-size: 19px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    column-gap: 10px;
+}

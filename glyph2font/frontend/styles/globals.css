@@ -1,0 +1,35 @@
+:root {
+  --primary-color: #000000;
+  --background-color: #e7e7e7;
+  --header-color: #ffffff;
+  --primary-dark-color: #000000;
+  --secondary-dark-color: #161B22;
+  --primary-dark-contrast-color: #e2e2e2;
+}
+
+html, body, #__next{
+  background-color: var(--background-color);
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888; 
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555; 
+}

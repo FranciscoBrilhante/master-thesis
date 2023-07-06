@@ -1,0 +1,47 @@
+[
+    {
+        "model": "glyphs.generativeModel",
+        "pk": 1,
+        "fields": {
+            "name":"Capitals64-KHBNRD",
+            "description_en":"default model trained with skeleton masks for 600 epoch with input glyphs {K,H,B,N,R,D}",
+            "description_pt":"Modelo GlyphNet treinado com os glifos {K,H,B,N,R,D} durante 600 epochs",
+            "log_path":"checkpoints/subset_0.pt",
+            "sugested_inputs":"KHBNRD",
+            "eta":2,
+            "is_diffusion": false,
+            "aux_diff_path":null,
+            "diff_path":null
+        }
+    },
+    {
+        "model": "glyphs.generativeModel",
+        "pk": 2,
+        "fields": {
+            "name":"Capitals64-HODSGR",
+            "description_en":"default model trained with skeleton masks for 600 epoch with input glyphs {H,O,S,G,R,K}",
+            "description_pt":"Modelo GlyphNet treinado com os glifos {H,O,S,G,R,K} durante 600 epochs",
+            "log_path":"checkpoints/subset_1.pt",
+            "sugested_inputs":"HOSGRK",
+            "eta":2,
+            "is_diffusion": false,
+            "aux_diff_path":null,
+            "diff_path":null
+        }
+    },
+    {
+        "model": "glyphs.generativeModel",
+        "pk": 3,
+        "fields": {
+            "name":"Diffusion-KHBNRD",
+            "description_en":"Diffusion model trained with input glyphs {H,O,S,G,R,K}",
+            "description_pt":"Modelo de difusão treinado com os glifos {H,O,S,G,R,K}",
+            "log_path":"checkpoints/subset_1.pt",
+            "sugested_inputs":"HOSGRK",
+            "eta":2,
+            "is_diffusion": true,
+            "aux_diff_path":"checkpoints/diff_aux.pt",
+            "diff_path":"checkpoints/diffusion.pt"
+        }
+    }
+]
