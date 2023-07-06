@@ -33,7 +33,7 @@ numpy
 
 ### Experiment Replication
 Both `gan` and `diffusion-model` contain a `configs.py` file with configurations for all the experiments.
-In order to train a given netowrk call `train` function with a config setup.
+In order to train a given netowrk call `train` function with a config setup. Scripts to run these experiments can be found in `gan/experiments.py` and `diffusion-model/experiments.py`
 ```python
 #assuming current directory is ./gan
 from configs import *
