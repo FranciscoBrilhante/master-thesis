@@ -29,6 +29,8 @@ pillow
 matplotlib
 tqdm
 numpy
+requests
+python-dotenv
 ```
 
 ### Experiment Replication
