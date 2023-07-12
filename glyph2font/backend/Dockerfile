@@ -19,7 +19,7 @@ WORKDIR /home/backend
 RUN echo "Installing LIVE-svg dependencies" && \
     conda create -y -n live python=3.7 && \
     conda activate live && \
-    conda install -y pytorch torchvision -c pytorch && \
+    conda install pytorch torchvision pytorch-cuda=11.7 -c pytorch -c nvidia && \
     conda install -y numpy scikit-image && \
     conda install -y -c anaconda cmake && \
     conda install -y -c conda-forge ffmpeg && \
@@ -47,9 +47,6 @@ RUN conda activate live && \
     mv base.yaml live/LIVE/config/base.yaml && \
     echo "Initializing Django app and server" && \
     rm -rf glyphs/migrations/*.py || true && \
-    rm db.sqlite3 && \
-    mkdir checkpoints && \
-    mkdir outputs && \
     python3 manage.py makemigrations && \
     python3 manage.py migrate && \ 
     python3 manage.py makemigrations glyphs && \
@@ -59,7 +56,7 @@ RUN conda activate live && \
 EXPOSE 8000
 CMD /bin/bash
 # docker build -t glyph2font-backend .
-# docker run -ti -p 8000:8000 --name glyph2font-backend glyph2font-backend
+# docker run -ti -p 8000:8000 --gpus all  --name glyph2font-backend glyph2font-backend
 # docker rm glyph2font-backend
 
 # conda activate live

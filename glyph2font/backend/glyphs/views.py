@@ -65,14 +65,18 @@ def generate(request):
             width = form.cleaned_data['width']
             height = form.cleaned_data['height']
             image = request.FILES["images"]
+            
+            load_dotenv(dotenv_path="./env.env")
+            key = os.getenv('VECTORIZER_API_KEY')
+            device=os.getenv('DEVICE')
 
             image = ImagePIL.open(image)
-            inputs = pre_process(image, labels, colorscheme, width, height)
-            output = generate_raster(inputs, model)
+            inputs = pre_process(image, labels, colorscheme, width, height,device)
+            output = generate_raster(inputs, model,device)
 
             files_to_delete = []
             if format == 'svg':
-                file_name, files_created = generate_vector(output, poligons, segments)
+                file_name, files_created = generate_vector(output, poligons, segments,key)
                 for fil in files_created:
                     files_to_delete.append(fil)
 
@@ -98,13 +102,13 @@ def generate(request):
 @torch.no_grad()
 def sample(x: torch.Tensor, max_steps: int, model: torch.nn.Module, content: torch.Tensor, style: torch.Tensor):
     # Remove noise for $T$ steps
-    for t_ in range(max_steps):
+    for t_ in tqdm(range(max_steps)):
         t = max_steps - t_ - 1
         timestamps=x.new_full((x.size(0),), t, dtype=torch.long)
         x = model.p_sample(x, timestamps , content, style)
     return x
 
-def pre_process(image, labels, color_scheme, width, height):
+def pre_process(image, labels, color_scheme, width, height, device):
     labels = list(labels)
     abc = list(string.ascii_uppercase)
 
@@ -122,14 +126,13 @@ def pre_process(image, labels, color_scheme, width, height):
         aux=image[:, :, width*i:width*(i+1)].unsqueeze(0)
         aux=F.interpolate(aux, size=(64,64))
         inputs[abc.index(labels[i]), :, :] = aux
-    inputs = inputs.unsqueeze(0).to('cpu')
+    inputs = inputs.unsqueeze(0).to(device)
     return inputs
 
 
-def generate_raster(inputs, model_name):
+def generate_raster(inputs, model_name, device):
     isDiffusion=GenerativeModel.objects.get(name=model_name).is_diffusion
     model_path = GenerativeModel.objects.get(name=model_name).log_path
-    device="cpu"
     if isDiffusion:
         sys.path.insert(0, './diffusion-model')
         aux_path=GenerativeModel.objects.get(name=model_name).aux_diff_path
@@ -149,9 +152,6 @@ def generate_raster(inputs, model_name):
         final=torch.ones((1, 64, 1664)).to(device)
         for glyph in tqdm(range(26)):
             content=torch.Tensor([glyph]).long().unsqueeze(0).to(device)
-            print(content.size())
-            print(style.size())
-            
             output=sample(torch.randn([1,1,64,64], device=device),1000,model,content, style)
             output=transforms.Lambda(lambda t: -t+1.)(output)
             final[0, :, glyph*64:(glyph+1)*64] = output
@@ -159,14 +159,14 @@ def generate_raster(inputs, model_name):
     
     else:
         sys.path.insert(0, './gan')
-        model = load(model_path, map_location=torch.device('cpu'))
+        model = load(model_path, map_location=torch.device(device))
         model.eval()
 
         output = model.forward(inputs)
         output = unfold_image(output[0])
         return output
 
-def generate_vector(outputs: Tensor, num_paths: int, num_segments: int):
+def generate_vector(outputs: Tensor, num_paths: int, num_segments: int, key: str):
     files_created = []
     zip_path = f'outputs/{str(uuid.uuid4())}.zip'
     zipObj = ZipFile(zip_path, 'w')
@@ -180,8 +180,6 @@ def generate_vector(outputs: Tensor, num_paths: int, num_segments: int):
         files_created.append(png_file_name)
         files_created.append(svg_file_name)
 
-        load_dotenv(dotenv_path="./env.env")
-        key = os.getenv('VECTORIZER_API_KEY')
         if key!=None:
             response = requests.post('https://vectorizer.ai/api/v1/vectorize',
                 files={'image': open(png_file_name, 'rb')},
