@@ -48,6 +48,8 @@ RUN conda activate live && \
     echo "Initializing Django app and server" && \
     rm -rf glyphs/migrations/*.py || true && \
     rm db.sqlite3 && \
+    mkdir checkpoints && \
+    mkdir outputs && \
     python3 manage.py makemigrations && \
     python3 manage.py migrate && \ 
     python3 manage.py makemigrations glyphs && \
