@@ -38,7 +38,7 @@
             "description_pt":"Modelo de difusão treinado com os glifos {H,O,S,G,R,K}",
             "log_path":"checkpoints/subset_1.pt",
             "sugested_inputs":"HOSGRK",
-            "eta":2,
+            "eta":650,
             "is_diffusion": true,
             "aux_diff_path":"checkpoints/diff_aux.pt",
             "diff_path":"checkpoints/diffusion.pt"
