@@ -12,6 +12,8 @@ from pathlib import Path
 import uuid
 import glob
 from tqdm import tqdm
+import requests
+from dotenv import load_dotenv
 
 # torch modules
 import torch
@@ -27,8 +29,9 @@ from dotenv import load_dotenv
 from PIL import Image as ImagePIL
 
 import sys
-sys.path.insert(0, './gan')
 sys.path.insert(0, './diffusion-model')
+sys.path.insert(0, './gan')
+
 
 
 def index(request):
@@ -189,9 +192,26 @@ def generateSVG(outputs: Tensor, num_paths: int, num_segments: int):
         files_created.append(png_file_name)
         files_created.append(svg_file_name)
 
-        os.system(
-            f"python live/LIVE/main.py --config live/LIVE/config/base.yaml --experiment main --output_path {svg_file_name} --target {png_file_name}  --num_paths={num_paths} --num_segments={num_segments} --num_iter 50")
+        load_dotenv(dotenv_path="./env.env")
+        key = os.getenv('VECTORIZER_API_KEY')
+        if key!=None:
+            response = requests.post('https://vectorizer.ai/api/v1/vectorize',
+                files={'image': open(png_file_name, 'rb')},
+                data={},
+                headers={
+                    'Authorization':
+                    f'Basic {key}'
+                })
+            if response.status_code == requests.codes.ok:
+                # Save result
+                with open(svg_file_name, 'wb') as out:
+                    out.write(response.content)
+            else:
+                raise Exception("Vectorizer Error")
+        else:
+            os.system(f"python live/LIVE/main.py --config live/LIVE/config/base.yaml --experiment main --output_path {svg_file_name} --target {png_file_name}  --num_paths={num_paths} --num_segments={num_segments} --num_iter 50")
         zipObj.write(svg_file_name)
+        zipObj.write(png_file_name)
 
     zipObj.close()
     return zip_path, files_created

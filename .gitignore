@@ -151,3 +151,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 glyph2font/backend/env.env
+*.pt
+*.env
+glyph2font/backend/outputs/*
+glyph2font/frontend/.next
+glyph2font/frontend/node_modules

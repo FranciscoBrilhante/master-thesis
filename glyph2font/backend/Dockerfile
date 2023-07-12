@@ -30,6 +30,8 @@ RUN echo "Installing LIVE-svg dependencies" && \
     pip install django-cors-headers && \
     pip install Pillow && \
     pip install python-dotenv && \
+    pip install requests && \
+    pip install python-dotenv && \
     conda list
 
 COPY . .
