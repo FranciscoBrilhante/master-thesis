@@ -29,8 +29,7 @@ from dotenv import load_dotenv
 from PIL import Image as ImagePIL
 
 import sys
-sys.path.insert(0, './diffusion-model')
-sys.path.insert(0, './gan')
+
 
 
 
@@ -68,12 +67,12 @@ def generate(request):
             image = request.FILES["images"]
 
             image = ImagePIL.open(image)
-            inputs = prepareInputs(image, labels, colorscheme, width, height)
-            output = generateOutput(inputs, model)
+            inputs = pre_process(image, labels, colorscheme, width, height)
+            output = generate_raster(inputs, model)
 
             files_to_delete = []
             if format == 'svg':
-                file_name, files_created = generateSVG(output, poligons, segments)
+                file_name, files_created = generate_vector(output, poligons, segments)
                 for fil in files_created:
                     files_to_delete.append(fil)
 
@@ -100,15 +99,12 @@ def generate(request):
 def sample(x: torch.Tensor, max_steps: int, model: torch.nn.Module, content: torch.Tensor, style: torch.Tensor):
     # Remove noise for $T$ steps
     for t_ in range(max_steps):
-        # $t$
         t = max_steps - t_ - 1
-        # Sample from $\textcolor{lightgreen}{p_\theta}(x_{t-1}|x_t)$
         timestamps=x.new_full((x.size(0),), t, dtype=torch.long)
         x = model.p_sample(x, timestamps , content, style)
-
     return x
 
-def prepareInputs(image, labels, color_scheme, width, height):
+def pre_process(image, labels, color_scheme, width, height):
     labels = list(labels)
     abc = list(string.ascii_uppercase)
 
@@ -130,22 +126,21 @@ def prepareInputs(image, labels, color_scheme, width, height):
     return inputs
 
 
-def generateOutput(inputs, model_name):
+def generate_raster(inputs, model_name):
     isDiffusion=GenerativeModel.objects.get(name=model_name).is_diffusion
     model_path = GenerativeModel.objects.get(name=model_name).log_path
     device="cpu"
     if isDiffusion:
+        sys.path.insert(0, './diffusion-model')
         aux_path=GenerativeModel.objects.get(name=model_name).aux_diff_path
         diff_path=GenerativeModel.objects.get(name=model_name).diff_path
 
-        print(inputs.size())
+       
         print("loading aux model")
         aux_model = load(aux_path, map_location=torch.device(device))
         aux_model.eval()
         style = aux_model.encode(inputs)
-
         print("style extracted")
-        print(style.size())
 
         print("loading main model")
         model = load(diff_path, map_location=torch.device(device))
@@ -163,6 +158,7 @@ def generateOutput(inputs, model_name):
         return final
     
     else:
+        sys.path.insert(0, './gan')
         model = load(model_path, map_location=torch.device('cpu'))
         model.eval()
 
@@ -170,19 +166,11 @@ def generateOutput(inputs, model_name):
         output = unfold_image(output[0])
         return output
 
-
-def unfold_image(tensor: Tensor):
-    unfolded = torch.ones((1, 64, 1664)).to(tensor.device)
-    for i in range(26):
-        unfolded[0, :, i*64:(i+1)*64] = tensor[i, :, :]
-    return unfolded
-
-
-def generateSVG(outputs: Tensor, num_paths: int, num_segments: int):
+def generate_vector(outputs: Tensor, num_paths: int, num_segments: int):
     files_created = []
     zip_path = f'outputs/{str(uuid.uuid4())}.zip'
-    # Path(zip_path).mkdir(exist_ok=True, parents=True)
     zipObj = ZipFile(zip_path, 'w')
+
     for i in range(26):
         img_io = BytesIO()
         transforms.ToPILImage()(outputs[0, :, i*64:(i+1)*64]).save(img_io, format='PNG', quality=100)
@@ -217,6 +205,17 @@ def generateSVG(outputs: Tensor, num_paths: int, num_segments: int):
     return zip_path, files_created
 
 
+def unfold_image(tensor):
+    unfolded = torch.ones((1, 64, 1664)).to(tensor.device)
+    for i in range(26):
+        unfolded[0, :, i*64:(i+1)*64] = tensor[i, :, :]
+    return unfolded
+
+def fold_image(tensor):
+    sample_channeled = torch.zeros((26, 64, 64))
+    for i in range(26):
+        sample_channeled[i, :, :] = tensor[0, :, 64*i:64*(i+1)]
+    return sample_channeled
 """     
 def image_to_tensor(image:Image):
     trans = transforms.Compose([
@@ -226,9 +225,5 @@ def image_to_tensor(image:Image):
     image = trans(image)
     return image
 
-def fold_image(tensor: Tensor) -> Tensor:
-    sample_channeled = torch.zeros((26, 64, 64))
-    for i in range(26):
-        sample_channeled[i, :, :] = tensor[0, :, 64*i:64*(i+1)]
-    return sample_channeled
+
 """
