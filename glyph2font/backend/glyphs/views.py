@@ -1,9 +1,13 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath('./gan'))
+
 from django.shortcuts import render
 from django.http import JsonResponse, FileResponse
 from .models import GenerativeModel
 from .forms import Generate
 import string
-import os
+
 from django.core.files.storage import default_storage
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -27,11 +31,6 @@ from torchvision.utils import save_image
 from zipfile import ZipFile
 from dotenv import load_dotenv
 from PIL import Image as ImagePIL
-
-import sys
-
-
-
 
 def index(request):
     return JsonResponse({"status": 200, "description": "Hello world. You're at the glyphs index."})
@@ -84,9 +83,9 @@ def generate(request):
                 img_io = BytesIO()
                 if colorscheme == 'white':
                     output=transforms.Lambda(lambda t: -t + 1)(output)
-
-                transforms.ToPILImage()(output).save(img_io, format='PNG', quality=100)
-                file_name = default_storage.save("outputs/image.png", ContentFile(img_io.getvalue(), 'imgage.png'))
+                
+                save_image(output,img_io,"PNG")
+                file_name = default_storage.save("outputs/image.png", ContentFile(img_io.getvalue(), 'image.png'))
 
             for fil in files_to_delete:
                 default_storage.delete(fil)
@@ -134,7 +133,6 @@ def generate_raster(inputs, model_name, device):
     isDiffusion=GenerativeModel.objects.get(name=model_name).is_diffusion
     model_path = GenerativeModel.objects.get(name=model_name).log_path
     if isDiffusion:
-        sys.path.insert(0, './diffusion-model')
         aux_path=GenerativeModel.objects.get(name=model_name).aux_diff_path
         diff_path=GenerativeModel.objects.get(name=model_name).diff_path
 
@@ -155,10 +153,10 @@ def generate_raster(inputs, model_name, device):
             output=sample(torch.randn([1,1,64,64], device=device),1000,model,content, style)
             output=transforms.Lambda(lambda t: -t+1.)(output)
             final[0, :, glyph*64:(glyph+1)*64] = output
+            
         return final
     
     else:
-        sys.path.insert(0, './gan')
         model = load(model_path, map_location=torch.device(device))
         model.eval()
 
@@ -173,13 +171,15 @@ def generate_vector(outputs: Tensor, num_paths: int, num_segments: int, key: str
 
     for i in range(26):
         img_io = BytesIO()
-        transforms.ToPILImage()(outputs[0, :, i*64:(i+1)*64]).save(img_io, format='PNG', quality=100)
+        save_image(outputs[0, :, i*64:(i+1)*64],img_io,"PNG")
+        #transforms.ToPILImage()(outputs[0, :, i*64:(i+1)*64]).save(img_io, format='PNG', quality=100)
 
-        png_file_name = default_storage.save(f"outputs/{str(i)}.png", ContentFile(img_io.getvalue(), 'imgage.png'))
+        png_file_name = default_storage.save(f"outputs/{str(i)}.png", ContentFile(img_io.getvalue(), 'image.png'))
         svg_file_name = f'{png_file_name[:-4]}.svg'
         files_created.append(png_file_name)
         files_created.append(svg_file_name)
 
+       
         if key!=None:
             response = requests.post('https://vectorizer.ai/api/v1/vectorize',
                 files={'image': open(png_file_name, 'rb')},
@@ -214,14 +214,4 @@ def fold_image(tensor):
     for i in range(26):
         sample_channeled[i, :, :] = tensor[0, :, 64*i:64*(i+1)]
     return sample_channeled
-"""     
-def image_to_tensor(image:Image):
-    trans = transforms.Compose([
-        transforms.Grayscale(1),
-        transforms.ToTensor(),
-    ])
-    image = trans(image)
-    return image
 
-
-"""
